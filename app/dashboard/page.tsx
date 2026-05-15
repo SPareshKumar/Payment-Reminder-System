@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import DashboardCharts from "@/components/ui/DashboardCharts"
 import { IndianRupee, FileText, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react"
 
 export default async function DashboardPage() {
@@ -101,50 +102,45 @@ export default async function DashboardPage() {
 
       </div>
 
-      {/* Actionable Overdue Table */}
-      <div className="grid md:grid-cols-2 gap-8">
-        <Card className="col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Action Required: Overdue Invoices</CardTitle>
+      {/* 50/50 Split Layout: Overdue Table (Left) & Visuals (Right) */}
+      <div className="grid lg:grid-cols-2 gap-8 items-start">
+        
+        {/* LEFT COLUMN: Action Required Table */}
+        <Card className="col-span-1 shadow-md border-gray-200">
+          <CardHeader className="flex flex-row items-center justify-between border-b bg-gray-50/50 rounded-t-xl">
+            <CardTitle className="text-black">Action Required: Overdue</CardTitle>
             <Link href="/invoices">
-              <Button variant="ghost" size="sm" className="gap-1">
+              <Button variant="ghost" size="sm" className="gap-1 text-black hover:text-gray-700 hover:bg-gray-100">
                 View All <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6 max-h-56 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Invoice #</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recentOverdue.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={3} className="text-center py-12 text-muted-foreground">
+                      <CheckCircle2 className="h-8 w-8 mx-auto text-green-500 mb-2" />
                       Great job! No overdue invoices right now.
                     </TableCell>
                   </TableRow>
                 ) : (
                   recentOverdue.map((invoice) => (
                     <TableRow key={invoice.id}>
-                      <TableCell className="font-medium text-blue-600">{invoice.invoice_number}</TableCell>
-                      <TableCell>{invoice.customers?.display_name}</TableCell>
-                      <TableCell className="font-medium text-red-600">Rs. {Number(invoice.total_amount).toFixed(2)}</TableCell>
-                      <TableCell>
-                        {new Date(invoice.due_date).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
+                      <TableCell className="font-medium text-blue-600">
+                        <Link href={`/invoices?search=${invoice.invoice_number}`}>{invoice.invoice_number}</Link>
                       </TableCell>
-                      <TableCell>
-                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Overdue</Badge>
+                      <TableCell>{invoice.customers?.display_name}</TableCell>
+                      <TableCell className="font-medium text-red-600 text-right whitespace-nowrap">
+                        Rs. {Number(invoice.total_amount).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))
@@ -153,6 +149,10 @@ export default async function DashboardPage() {
             </Table>
           </CardContent>
         </Card>
+
+        {/* The Fragment will automatically distribute the 3 charts into the remaining grid slots */}
+        <DashboardCharts invoices={safeInvoices} />
+
       </div>
 
     </div>

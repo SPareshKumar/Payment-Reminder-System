@@ -10,9 +10,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { updateInvoiceStatus } from '@/lib/actions'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Search, Plus, Send, ChevronDown } from 'lucide-react' // Added ChevronDown
+import { Search, Plus, Send, ChevronDown, Eye } from 'lucide-react' // Added Eye
+// Helper component to highlight search terms
+const HighlightMatch = ({ text, query }: { text: string; query: string }) => {
+  if (!query.trim() || !text) return <>{text}</>;
 
+  // Split text into an array, keeping the matched parts (case-insensitive)
+  const regex = new RegExp(`(${query})`, 'gi');
+  const parts = text.split(regex);
 
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <span key={index} className="bg-yellow-200 text-yellow-900 rounded-sm px-[2px]">
+            {part}
+          </span>
+        ) : (
+          <span key={index}>{part}</span>
+        )
+      )}
+    </>
+  );
+};
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -139,28 +159,33 @@ export default function InvoicesPage() {
 
       {/* Data Table */}
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-        <Table>
+        <Table className="table-fixed w-full">
           <TableHeader>
             <TableRow>
-              <TableHead>Invoice #</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[16%]">Invoice #</TableHead>
+              <TableHead className="w-[22%]">Customer</TableHead>
+              <TableHead className="w-[14%]">Amount</TableHead>
+              <TableHead className="w-[16%]">Due Date</TableHead>
+              <TableHead className="w-[14%]">Status</TableHead>
+              <TableHead className="w-[9%] text-center">Preview</TableHead>
+              <TableHead className="w-[9%] text-center">Remind</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8">Loading invoices...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8">Loading invoices...</TableCell></TableRow>
             ) : filteredInvoices.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No invoices found matching your criteria.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No invoices found matching your criteria.</TableCell></TableRow>
             ) : (
               filteredInvoices.map((invoice) => (
                 <TableRow key={invoice.id}>
-                  <TableCell className="font-medium text-blue-600">{invoice.invoice_number}</TableCell>
-                  <TableCell>{invoice.customers?.display_name}</TableCell>
-                  <TableCell className="font-medium">Rs. {invoice.total_amount.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium text-blue-600">
+                    <HighlightMatch text={invoice.invoice_number} query={searchQuery} />
+                  </TableCell>
+                  <TableCell>
+                    <HighlightMatch text={invoice.customers?.display_name || ''} query={searchQuery} />
+                  </TableCell>
+                  <TableCell className="font-medium">Rs. {Number(invoice.total_amount).toFixed(2)}</TableCell>
                   <TableCell>
                     {new Date(invoice.due_date).toLocaleDateString('en-IN', {
                       day: '2-digit',
@@ -171,16 +196,24 @@ export default function InvoicesPage() {
                   <TableCell>
                     <StatusDropdown invoice={invoice} />
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-2 text-muted-foreground hover:text-primary"
+                  <TableCell className="whitespace-nowrap text-center">
+                    <Link href={`/invoices/${invoice.id}`}>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary" aria-label="Preview invoice">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </TableCell>
+
+                  <TableCell className="whitespace-nowrap text-center">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground hover:text-primary"
                       onClick={() => handleRemind(invoice.id)}
                       disabled={isPending && remindingId === invoice.id}
+                      aria-label="Send reminder"
                     >
                       <Send className="h-4 w-4" />
-                      {isPending && remindingId === invoice.id ? "Sending..." : "Remind"}
                     </Button>
                   </TableCell>
                 </TableRow>
