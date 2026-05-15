@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react' // Added useTransition
+import { sendReminderEmail } from '@/lib/actions'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -16,6 +17,23 @@ export default function InvoicesPage() {
   // Filtering State
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+
+  const [isPending, startTransition] = useTransition()
+  const [remindingId, setRemindingId] = useState<string | null>(null)
+
+  const handleRemind = (invoiceId: string) => {
+    setRemindingId(invoiceId)
+    startTransition(async () => {
+      try {
+        await sendReminderEmail(invoiceId)
+        alert("Reminder sent successfully!")
+      } catch (error) {
+        alert("Failed to send reminder.")
+      } finally {
+        setRemindingId(null)
+      }
+    })
+  }
 
   // Fetch invoices and join with customer data
   useEffect(() => {
@@ -116,11 +134,17 @@ export default function InvoicesPage() {
                   <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
                   <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                   <TableCell className="text-right">
-                    {/* We will wire up this reminder button next! */}
-                    <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
-                      <Send className="h-4 w-4" /> Remind
-                    </Button>
-                  </TableCell>
+  <Button 
+    variant="ghost" 
+    size="sm" 
+    className="gap-2 text-muted-foreground hover:text-primary"
+    onClick={() => handleRemind(invoice.id)}
+    disabled={isPending && remindingId === invoice.id}
+  >
+    <Send className="h-4 w-4" /> 
+    {isPending && remindingId === invoice.id ? "Sending..." : "Remind"}
+  </Button>
+</TableCell>
                 </TableRow>
               ))
             )}
