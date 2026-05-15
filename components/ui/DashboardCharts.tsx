@@ -82,7 +82,7 @@ export default function DashboardCharts({ invoices }: { invoices: any[] }) {
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
-              <Tooltip formatter={(value: number) => `Rs. ${value.toFixed(2)}`} />
+              <Tooltip formatter={(value: any) => `Rs. ${Number(value).toFixed(2)}`} />
               <Legend />
               <Bar dataKey="billed" name="Total Billed" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               <Bar dataKey="paid" name="Actually Paid" fill="#16a34a" radius={[4, 4, 0, 0]} />
