@@ -66,7 +66,7 @@ export default function DashboardCharts({ invoices }: { invoices: any[] }) {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => `Rs. ${value.toFixed(2)}`} />
+              <Tooltip formatter={(value: any) => `Rs. ${Number(value).toFixed(2)}`} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
