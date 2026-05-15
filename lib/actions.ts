@@ -6,6 +6,12 @@ import { Resend } from 'resend'
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY)
+// Helper to get current IST date as YYYY-MM-DD
+function getTodayIST() {
+  const date = new Date()
+  const istTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+  return istTime.toISOString().split('T')[0]
+}
 
 export async function addCustomer(formData: FormData) {
   // Extract values from the form
@@ -45,6 +51,10 @@ export async function createInvoiceAction(payload: {
 }) {
   const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`
 
+  const todayIST = getTodayIST()
+  // If the due date is strictly before today in India, it is instantly overdue
+  const initialStatus = payload.dueDate < todayIST ? 'overdue' : 'pending'
+
   // 1. Insert the Invoice
   const { data: invoice, error: invoiceError } = await supabase
     .from('invoices')
@@ -53,7 +63,7 @@ export async function createInvoiceAction(payload: {
       invoice_number: invoiceNumber,
       issue_date: payload.issueDate,
       due_date: payload.dueDate,
-      status: 'pending', 
+      status: initialStatus, 
       total_amount: payload.totalAmount,
       notes: payload.notes
     }])
@@ -144,4 +154,24 @@ export async function sendReminderEmail(invoiceId: string) {
   revalidatePath('/dashboard')
   
   return { success: true }
+}
+
+export async function updateInvoiceStatus(invoiceId: string, newStatus: string) {
+  const { error } = await supabase
+    .from('invoices')
+    .update({ status: newStatus })
+    .eq('id', invoiceId)
+
+  if (error) throw new Error("Failed to update status: " + error.message)
+
+  // Log the manual change
+  await supabase
+    .from('activity_logs')
+    .insert([{
+      invoice_id: invoiceId,
+      action: `Status manually updated to ${newStatus}`
+    }])
+
+  revalidatePath('/invoices')
+  revalidatePath('/dashboard')
 }

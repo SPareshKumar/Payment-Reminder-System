@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { DollarSign, FileText, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react"
+import { IndianRupee, FileText, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react"
 
 export default async function DashboardPage() {
   // Fetch all invoices with their associated customer names
@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   const { data: invoices } = await supabase
     .from('invoices')
     .select('*, customers(display_name)')
-    .order('due_date', { ascending: true }) 
+    .order('due_date', { ascending: true })
 
   // Safe fallback to an empty array if there is no data yet
   const safeInvoices = invoices || []
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
@@ -50,12 +50,12 @@ export default async function DashboardPage() {
 
       {/* Metric Cards Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
+
         {/* Outstanding Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Outstanding</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Rs. {outstandingAmount.toFixed(2)}</div>
@@ -136,7 +136,13 @@ export default async function DashboardPage() {
                       <TableCell className="font-medium text-blue-600">{invoice.invoice_number}</TableCell>
                       <TableCell>{invoice.customers?.display_name}</TableCell>
                       <TableCell className="font-medium text-red-600">Rs. {Number(invoice.total_amount).toFixed(2)}</TableCell>
-                      <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {new Date(invoice.due_date).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}
+                      </TableCell>
                       <TableCell>
                         <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Overdue</Badge>
                       </TableCell>
