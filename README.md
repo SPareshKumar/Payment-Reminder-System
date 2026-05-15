@@ -1,21 +1,20 @@
 # Payment Reminder & Invoicing System
-**Engineering Take-Home Assignment — Binary Automates**
 
 A full-stack, automated invoicing and payment reminder system designed to help small businesses track receivables, automate follow-ups, and analyze cash flow.
 
 ## 🚀 Live Demo
-*(Insert your Vercel URL here)*
+*https://payment-reminder-system-gold.vercel.app/dashboard*
 
 ---
 
 ## 🏗 System Architecture & Tech Stack
 
-This application was engineered with a strong emphasis on data pipeline efficiency, server-centric rendering, and relational data integrity.
+This application was engineered with a strong emphasis on efficiency, server-centric rendering, and relational data integrity.
 
-* **Framework:** Next.js 14 (App Router)
+* **Framework:** Next.js 14
 * **Language:** TypeScript
 * **Database:** PostgreSQL (via Supabase)
-* **Styling & UI:** Tailwind CSS, shadcn/ui (Radix Primitives)
+* **Styling & UI:** Tailwind CSS, shadcn/ui
 * **Data Visualization:** Recharts
 * **Background Jobs:** Vercel Cron
 * **Transactional Email:** Resend API
