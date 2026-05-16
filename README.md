@@ -47,24 +47,24 @@ Designed for better understanding of users, the Invoice Preview page (`/invoices
 ## 🧠 Engineering Decisions
 
 1. **Server Actions over API Routes:** Utilized Next.js Server Actions (`lib/actions.ts`) for data mutation. Avoided using manual API route creation, completely eliminates the risk of exposing Supabase or Resend keys to the client bundle.
-2. **Client/Server Component Isolation:** Pushed `use client` directives as far down the component tree as possible (e.g., keeping the dashboard page a Server Component and only making the `DashboardCharts` a Client Component). This dramatically reduces the JavaScript payload sent to the browser.
-3. **IST Timezone Enforcement:** JavaScript's native Date objects default to the user's local system time, which causes critical bugs in financial software. Enforced strict `en-IN` locales and explicit `Asia/Kolkata` timezone calculations across both the client UI and server automated tasks to guarantee chronological accuracy.
+2. **Client/Server Component Isolation:** Pushed `use client` directives as far down the component tree as possible (e.g., keeping the dashboard page a Server Component and only making the `DashboardCharts` a Client Component). This greatly reduces the JavaScript payload sent to the browser.
+3. **IST Timezone Enforcement:** JavaScript's native Date objects default to the user's local system time, which causes critical bugs in financial software. Enforced strict `Asia/Kolkata` timezone calculations across both the client UI and server automated tasks to guarantee chronological accuracy.
 
 ---
 
 ## 🛡️ Security Posture & Intentional Trade-offs
 
-Because this is a time-boxed take-home assignment, the focus was placed heavily on core business logic, UX, and data flow. As a result, specific architectural trade-offs were made regarding the authentication layer:
+Because this is a time-boxed take-home assignment, the focus was placed heavily on core business logic, UX, and data flow.
 
-### What IS Secured:
-* **API Key Protection:** The Resend API key and Supabase Service Role keys are completely isolated on Vercel's Node environment.
-* **Cron Job Protection:** The automated sweep endpoint expects a strict `Bearer` token matching the environment's `CRON_SECRET`, preventing malicious internet scraping or DDoS database exhaustion.
+### Key Handling:
+* **API Key Protection:** The Resend API key and Supabase Service Role keys are completely isolated and protected on Vercel's Node environment.
+* **Cron Job Protection:** The automated sweep endpoint expects a strict `Bearer` token matching the environment's `CRON_SECRET`, which prevents malicious internet scraping or DDoS database exhaustion.
 
 ### Trade-offs (Roadmap to Production):
 * **No Session Authentication:** The application currently bypasses user login. Anyone with the URL can view the dashboard.
 * **Disabled Row Level Security (RLS):** To facilitate rapid development without session tokens, Supabase RLS is currently set to `Public Access`. 
 
-**Next Steps for V2:** If preparing this application for a live production environment, the immediate first step would be integrating **NextAuth** or **Supabase Auth**, wrapping the Next.js layout in an authentication middleware, and rewriting the PostgreSQL RLS policies to strictly scope all `SELECT` and `UPDATE` commands to the authenticated user's `tenant_id`.
+**Next Steps for V2:** If preparing this application for a live production environment, the immediate first step would be integrating **NextAuth** or **Supabase Auth** for user authentication, and rewriting the PostgreSQL RLS policies to strictly scope all `SELECT` and `UPDATE` commands to the authenticated users.
 
 ---
 *Developed as an engineering assignment.*
