@@ -3,15 +3,50 @@
 import { supabase } from './supabase'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
+import { z } from 'zod'
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY)
+
 // Helper to get current IST date as YYYY-MM-DD
 function getTodayIST() {
   const date = new Date()
   const istTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
   return istTime.toISOString().split('T')[0]
 }
+
+// ==========================================
+// ZOD SCHEMAS (Must be defined at the top)
+// ==========================================
+
+// 1. Define the strict runtime schema for Logos
+const LogoSchema = z.object({
+  url: z.string()
+    .url({ message: "Must be a valid HTTPS URL." })
+    .max(500, { message: "URL is too long." })
+    .startsWith("https://", { message: "URL must be secure (https)." })
+})
+
+// 2. Define the schema for a single line item
+const LineItemSchema = z.object({
+  description: z.string().min(1, { message: "Description cannot be empty." }),
+  quantity: z.number().int().positive({ message: "Quantity must be 1 or more." }),
+  rate: z.number().positive({ message: "Rate must be greater than 0." })
+})
+
+// 3. Define the schema for the entire invoice submission
+const CreateInvoiceSchema = z.object({
+  customerId: z.string().min(1, { message: "Customer is required." }),
+  issueDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid issue date format." }),
+  dueDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date format." }),
+  notes: z.string().default(''),
+  totalAmount: z.number().positive({ message: "Total amount must be greater than 0." }),
+  lineItems: z.array(LineItemSchema).min(1, { message: "Invoice must have at least one line item." })
+})
+
+// ==========================================
+// SERVER ACTIONS
+// ==========================================
 
 export async function addCustomer(formData: FormData) {
   // Extract values from the form
@@ -39,7 +74,6 @@ export async function addCustomer(formData: FormData) {
   revalidatePath('/customers')
 }
 
-// lib/actions.ts
 
 export async function createInvoiceAction(payload: {
   customerId: string;
@@ -49,31 +83,49 @@ export async function createInvoiceAction(payload: {
   items: { description: string; quantity: number; rate: number }[];
   totalAmount: number;
 }) {
+  // Fix: Mapped `payload.items` to the schema's expected `lineItems` key
+  const validatedFields = CreateInvoiceSchema.safeParse({
+    customerId: payload.customerId,
+    issueDate: payload.issueDate,
+    dueDate: payload.dueDate,
+    notes: payload.notes,
+    lineItems: payload.items, 
+    totalAmount: payload.totalAmount,
+  })
+
+  if (!validatedFields.success) {
+    const errorMessage = validatedFields.error.issues[0].message
+    throw new Error(`Validation failed: ${errorMessage}`)
+  }
+
+  // Extract the safely validated data
+  const { customerId, issueDate, dueDate, notes, lineItems, totalAmount } = validatedFields.data
+
   const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`
 
   const todayIST = getTodayIST()
   // If the due date is strictly before today in India, it is instantly overdue
-  const initialStatus = payload.dueDate < todayIST ? 'overdue' : 'pending'
+  const initialStatus = dueDate < todayIST ? 'overdue' : 'pending'
 
   // 1. Insert the Invoice
   const { data: invoice, error: invoiceError } = await supabase
     .from('invoices')
     .insert([{
-      customer_id: payload.customerId,
+      customer_id: customerId,
       invoice_number: invoiceNumber,
-      issue_date: payload.issueDate,
-      due_date: payload.dueDate,
+      issue_date: issueDate,
+      due_date: dueDate,
       status: initialStatus, 
-      total_amount: payload.totalAmount,
-      notes: payload.notes
+      total_amount: totalAmount,
+      notes: notes
     }])
     .select()
     .single()
 
   if (invoiceError) throw new Error("Invoice creation failed: " + invoiceError.message)
 
-  // 2. Insert the Line Items
-  const lineItemsToInsert = payload.items.map(item => ({
+  // 2. Insert the Line Items (mapped from the validated lineItems)
+  const lineItemsToInsert = lineItems.map(item => ({
     invoice_id: invoice.id,
     description: item.description,
     quantity: item.quantity,
@@ -278,14 +330,28 @@ export async function updateInvoiceStatus(invoiceId: string, newStatus: string) 
   revalidatePath('/dashboard')
 }
 
-export async function updateCompanyLogo(url: string) {
+export async function updateCompanyLogo(rawUrl: string) {
+  // 2. Validate the incoming data against the schema
+  const validatedFields = LogoSchema.safeParse({ url: rawUrl })
+
+  // 3. If validation fails, throw an error immediately before hitting the DB
+  if (!validatedFields.success) {
+    // We grab the first error message from Zod to send back to the frontend
+    const errorMessage = validatedFields.error.issues[0].message
+    throw new Error(`Validation failed: ${errorMessage}`)
+  }
+
+  // 4. If it passes, we use the strictly typed and sanitized data
+  const safeUrl = validatedFields.data.url
+
   const { error } = await supabase
     .from('company_settings')
-    .update({ logo_url: url })
+    .update({ logo_url: safeUrl })
     .eq('id', 1)
 
-  if (error) throw new Error("Failed to save logo")
-  revalidatePath('/') // Clears cache so changes reflect everywhere
+  if (error) throw new Error("Database error: Failed to save logo")
+  
+  revalidatePath('/invoices')
 }
 
 export async function updateInvoiceTemplate(invoiceId: string, template: string) {

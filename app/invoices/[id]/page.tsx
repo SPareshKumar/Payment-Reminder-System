@@ -58,8 +58,9 @@ export default function InvoicePreviewPage() {
       await updateCompanyLogo(tempLogoUrl)
       setLogoUrl(tempLogoUrl)
       alert("Logo saved successfully!")
-    } catch (error) {
-      alert("Failed to save logo.")
+    } catch (error: any) {
+      // Now this will display the specific server/Zod message (e.g., "Must be a valid HTTPS URL")
+      alert(error?.message || "Failed to save logo.")
     }
   }
 
