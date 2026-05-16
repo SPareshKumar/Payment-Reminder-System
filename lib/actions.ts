@@ -164,6 +164,28 @@ export async function sendReminderEmail(invoiceId: string) {
     throw new Error("Could not fetch invoice details.")
   }
 
+  // --- ROBUST IDEMPOTENCY & RATE LIMIT LOCK ---
+  // 1. Fetch the single most recent email log for this invoice
+  const { data: recentLogs } = await supabase
+    .from('activity_logs')
+    .select('created_at')
+    .eq('invoice_id', invoiceId)
+    .eq('action', 'Email reminder sent to client')
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  // 2. If a record exists, do the math locally in JavaScript
+  if (recentLogs && recentLogs.length > 0) {
+    const lastSendTime = new Date(recentLogs[0].created_at).getTime()
+    const timePassedInMs = Date.now() - lastSendTime
+
+    // If less than 30,000 milliseconds (30 seconds) have passed, block it!
+    if (timePassedInMs < 30000) {
+      throw new Error("Rate limit active: Please wait 30 seconds before sending another email.")
+    }
+  }
+  // ------------------------------------------
+
   // 2. Fetch the company logo
   const { data: settings } = await supabase
     .from('company_settings')

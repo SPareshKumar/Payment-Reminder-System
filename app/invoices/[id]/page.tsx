@@ -7,8 +7,7 @@ import { updateCompanyLogo, updateInvoiceTemplate, sendReminderEmail } from '@/l
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Mail, Send, Image as ImageIcon, LayoutTemplate } from 'lucide-react'
-
+import { ArrowLeft, Mail, Send, Image as ImageIcon, LayoutTemplate, Clock } from 'lucide-react'
 export default function InvoicePreviewPage() {
   const params = useParams()
   const router = useRouter()
@@ -21,6 +20,7 @@ export default function InvoicePreviewPage() {
 
   // Settings States
   const [activeTemplate, setActiveTemplate] = useState('classic')
+  const [logs, setLogs] = useState<any[]>([])
   const [tempLogoUrl, setTempLogoUrl] = useState('')
 
   useEffect(() => {
@@ -39,6 +39,14 @@ export default function InvoicePreviewPage() {
         .eq('id', 1)
         .single()
 
+      // --- NEW: Fetch Activity Logs ---
+      const { data: logData } = await supabase
+        .from('activity_logs')
+        .select('*')
+        .eq('invoice_id', params.id)
+        .order('created_at', { ascending: false })
+      // --------------------------------
+
       if (invData) {
         setInvoice(invData)
         setActiveTemplate(invData.template || 'classic')
@@ -47,6 +55,10 @@ export default function InvoicePreviewPage() {
         setLogoUrl(settingsData.logo_url)
         setTempLogoUrl(settingsData.logo_url)
       }
+      if (logData) {
+        setLogs(logData) // <-- Save logs to state
+      }
+      
       setLoading(false)
     }
     fetchData()
@@ -78,8 +90,8 @@ export default function InvoicePreviewPage() {
       try {
         await sendReminderEmail(invoice.id)
         alert("Invoice emailed successfully!")
-      } catch (error) {
-        alert("Failed to send email.")
+      } catch (error: any) {
+        alert(error.message || "Failed to send email.")
       }
     })
   }
@@ -335,20 +347,51 @@ export default function InvoicePreviewPage() {
                   className="justify-start h-12"
                   onClick={() => handleTemplateChange('trendy')}
                 >
-                  <span className="font-sans font-bold text-blue-600">Trendy (Aesthetic)</span>
+                  <span className={`font-sans font-normal italic ${(activeTemplate === 'trendy' || activeTemplate === 'wave') ? 'text-white' : 'text-black'}`}>
+                    Trendy (Aesthetic)
+                  </span>
                 </Button>
               </div>
             </CardContent>
           </Card>
 
           <Button 
-            className="w-full h-12 text-lg gap-2" 
+            className="w-full h-10 text-base gap-1" 
             onClick={handleSendEmail}
             disabled={isPending}
           >
-            <Send className="h-5 w-5" /> 
+            <Send className="h-4 w-4" /> 
             {isPending ? "Sending Email..." : "Send Final Invoice"}
           </Button>
+
+          {/* NEW: THE AUDIT TRAIL UI */}
+          <Card className="mt-8 bg-gray-50/50 border-dashed">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                <Clock className="h-4 w-4" /> Audit Trail
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[50vh] overflow-y-auto pr-2">
+              <div className="space-y-4">
+                {logs.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">No activity recorded yet.</p>
+                ) : (
+                  logs.map((log) => (
+                    <div key={log.id} className="relative pl-4 border-l-2 border-gray-200">
+                      <div className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-gray-300 ring-4 ring-white" />
+                      <p className="text-sm text-gray-700 font-medium">{log.action}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {new Date(log.created_at).toLocaleString('en-IN', {
+                          day: '2-digit', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
       </div>
