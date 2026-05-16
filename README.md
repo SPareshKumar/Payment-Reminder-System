@@ -42,6 +42,12 @@ Designed for better understanding of users, the Invoice Preview page (`/invoices
 * Built a serverless API route (`/api/cron`) triggered automatically by Vercel Cron at midnight daily.
 * The script authenticates the request, calculates the current date strictly in **Indian Standard Time (IST)**, and executes a batch SQL update to handle the state of all the invoices whose due date has passed.
 
+### 5. Immutable Audit Trail UI
+Financial software requires accountability and transparency.
+
+* **Chronological History:** Built a timeline directly into the Invoice Preview page that tracks and logs the exact lifecycle of the document.
+* **Automated Logging:** The system silently logs when an invoice is created, when its status is manually changed, and records timestamps for every email reminder sent, allowing business users to view the logs.
+
 ---
 
 ## 🧠 Engineering Decisions
@@ -49,6 +55,8 @@ Designed for better understanding of users, the Invoice Preview page (`/invoices
 1. **Server Actions over API Routes:** Utilized Next.js Server Actions (`lib/actions.ts`) for data mutation. Avoided using manual API route creation, completely eliminates the risk of exposing Supabase or Resend keys to the client bundle.
 2. **Client/Server Component Isolation:** Pushed `use client` directives as far down the component tree as possible (e.g., keeping the dashboard page a Server Component and only making the `DashboardCharts` a Client Component). This greatly reduces the JavaScript payload sent to the browser.
 3. **IST Timezone Enforcement:** JavaScript's native Date objects default to the user's local system time, which causes critical bugs in financial software. Enforced strict `Asia/Kolkata` timezone calculations across both the client UI and server automated tasks to guarantee chronological accuracy.
+4. **Strict Runtime Data Validation (Zod):** TypeScript only provides compile-time type checking. To establish a strict realtime check and protect the PostgreSQL database from invalid data or malicious payloads bypassing the frontend UI, all Server Actions are wrapped in strict Zod schemas. This guarantees runtime data integrity, including preventing negative invoice totals, empty line items, or invalid URL formats.
+5. **Rate Limiting:** UI checks alone are not enough to prevent duplicate API calls caused by network retries or users bypassing the UI. Implemented a backend idempotency lock that queries `activity_logs` before executing the Resend API, enforcing a strict 30-second cooldown per invoice. This helps ensure transaction safety, protects third-party API quotas, and prevents client email spam.
 
 ---
 
