@@ -124,7 +124,7 @@ export default function InvoicesPage() {
   })
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
@@ -159,68 +159,72 @@ export default function InvoicesPage() {
 
       {/* Data Table */}
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-        <Table className="table-fixed w-full">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[16%]">Invoice #</TableHead>
-              <TableHead className="w-[22%]">Customer</TableHead>
-              <TableHead className="w-[14%]">Amount</TableHead>
-              <TableHead className="w-[16%]">Due Date</TableHead>
-              <TableHead className="w-[14%]">Status</TableHead>
-              <TableHead className="w-[9%] text-center">Preview</TableHead>
-              <TableHead className="w-[9%] text-center">Remind</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8">Loading invoices...</TableCell></TableRow>
-            ) : filteredInvoices.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No invoices found matching your criteria.</TableCell></TableRow>
-            ) : (
-              filteredInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium text-blue-600">
-                    <HighlightMatch text={invoice.invoice_number} query={searchQuery} />
-                  </TableCell>
-                  <TableCell>
-                    <HighlightMatch text={invoice.customers?.display_name || ''} query={searchQuery} />
-                  </TableCell>
-                  <TableCell className="font-medium">Rs. {Number(invoice.total_amount).toFixed(2)}</TableCell>
-                  <TableCell>
-                    {new Date(invoice.due_date).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    <StatusDropdown invoice={invoice} />
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-center">
-                    <Link href={`/invoices/${invoice.id}`}>
-                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary" aria-label="Preview invoice">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </TableCell>
+        {/* NEW: Horizontal Scroll Wrapper */}
+        <div className="overflow-x-auto">
+          {/* REMOVED table-fixed, ADDED min-w-[800px] */}
+          <Table className="w-full min-w-[800px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[16%]">Invoice #</TableHead>
+                <TableHead className="w-[22%]">Customer</TableHead>
+                <TableHead className="w-[14%]">Amount</TableHead>
+                <TableHead className="w-[16%]">Due Date</TableHead>
+                <TableHead className="w-[14%]">Status</TableHead>
+                <TableHead className="w-[9%] text-center">Preview</TableHead>
+                <TableHead className="w-[9%] text-center">Remind</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-8">Loading invoices...</TableCell></TableRow>
+              ) : filteredInvoices.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No invoices found matching your criteria.</TableCell></TableRow>
+              ) : (
+                filteredInvoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium text-blue-600">
+                      <HighlightMatch text={invoice.invoice_number} query={searchQuery} />
+                    </TableCell>
+                    <TableCell>
+                      <HighlightMatch text={invoice.customers?.display_name || ''} query={searchQuery} />
+                    </TableCell>
+                    <TableCell className="font-medium">Rs. {Number(invoice.total_amount).toFixed(2)}</TableCell>
+                    <TableCell>
+                      {new Date(invoice.due_date).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      <StatusDropdown invoice={invoice} />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-center">
+                      <Link href={`/invoices/${invoice.id}`}>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary" aria-label="Preview invoice">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </TableCell>
 
-                  <TableCell className="whitespace-nowrap text-center">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground hover:text-primary"
-                      onClick={() => handleRemind(invoice.id)}
-                      disabled={isPending && remindingId === invoice.id}
-                      aria-label="Send reminder"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                    <TableCell className="whitespace-nowrap text-center">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-muted-foreground hover:text-primary"
+                        onClick={() => handleRemind(invoice.id)}
+                        disabled={isPending && remindingId === invoice.id}
+                        aria-label="Send reminder"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   )

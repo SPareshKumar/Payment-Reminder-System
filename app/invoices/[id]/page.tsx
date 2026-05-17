@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Mail, Send, Image as ImageIcon, LayoutTemplate, Clock } from 'lucide-react'
+
 export default function InvoicePreviewPage() {
   const params = useParams()
   const router = useRouter()
@@ -25,27 +26,23 @@ export default function InvoicePreviewPage() {
 
   useEffect(() => {
     async function fetchData() {
-      // Fetch the specific invoice WITH its customer and line items
       const { data: invData } = await supabase
         .from('invoices')
         .select('*, customers(*), line_items(*)')
         .eq('id', params.id)
         .single()
         
-      // Fetch the global company settings
       const { data: settingsData } = await supabase
         .from('company_settings')
         .select('*')
         .eq('id', 1)
         .single()
 
-      // --- NEW: Fetch Activity Logs ---
       const { data: logData } = await supabase
         .from('activity_logs')
         .select('*')
         .eq('invoice_id', params.id)
         .order('created_at', { ascending: false })
-      // --------------------------------
 
       if (invData) {
         setInvoice(invData)
@@ -56,7 +53,7 @@ export default function InvoicePreviewPage() {
         setTempLogoUrl(settingsData.logo_url)
       }
       if (logData) {
-        setLogs(logData) // <-- Save logs to state
+        setLogs(logData) 
       }
       
       setLoading(false)
@@ -64,14 +61,12 @@ export default function InvoicePreviewPage() {
     fetchData()
   }, [params.id])
 
-  // Handlers
   const handleSaveLogo = async () => {
     try {
       await updateCompanyLogo(tempLogoUrl)
       setLogoUrl(tempLogoUrl)
       alert("Logo saved successfully!")
     } catch (error: any) {
-      // Now this will display the specific server/Zod message (e.g., "Must be a valid HTTPS URL")
       alert(error?.message || "Failed to save logo.")
     }
   }
@@ -104,7 +99,6 @@ export default function InvoicePreviewPage() {
     const formattedDate = new Date(invoice.issue_date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
     const formattedDue = new Date(invoice.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
-    // 1. CLASSIC TEMPLATE
     if (activeTemplate === 'classic') {
       return (
         <div className="p-8 bg-white text-black font-serif border">
@@ -151,10 +145,9 @@ export default function InvoicePreviewPage() {
       )
     }
 
-    // 2. MINIMALIST TEMPLATE
     if (activeTemplate === 'minimalist') {
       return (
-        <div className="p-8 bg-white text-gray-800 font-sans">
+        <div className="p-8 bg-white text-gray-800 font-sans border border-gray-100 shadow-sm">
           <div className="flex justify-between items-center mb-12">
             {logoUrl ? <img src={logoUrl} alt="Logo" className="h-10 object-contain" /> : <h2 className="text-xl font-medium tracking-widest text-gray-400">YOUR COMPANY</h2>}
             <div className="text-right">
@@ -192,10 +185,9 @@ export default function InvoicePreviewPage() {
       )
     }
 
-    // 3. TRENDY / AESTHETIC TEMPLATE
     if (activeTemplate === 'trendy') {
       return (
-      <div className="bg-white text-gray-900 font-sans shadow-md rounded-lg overflow-hidden">
+      <div className="bg-white text-gray-900 font-sans shadow-md rounded-lg overflow-hidden border">
         <div className="bg-blue-600 p-8 text-white flex justify-between items-center">
           {logoUrl ? <img src={logoUrl} alt="Logo" className="h-12 bg-white p-1 rounded object-contain" /> : <h2 className="text-2xl font-bold">YOUR COMPANY</h2>}
           <div className="text-right">
@@ -248,18 +240,24 @@ export default function InvoicePreviewPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50 min-h-screen">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => router.push('/invoices')}>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 bg-gray-50 min-h-screen">
+      
+      {/* HEADER */}
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="icon" className="shrink-0" onClick={() => router.push('/invoices')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">Invoice Settings & Preview</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Invoice Settings & Preview</h1>
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_400px] gap-8 items-start">
+      {/* NEW LAYOUT FIX: 
+        We use grid-cols-1 for mobile, and grid-cols-[1fr_400px] for desktop.
+        We use order-2 for the invoice and order-1 for the settings so settings appear FIRST on mobile.
+      */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_350px] lg:grid-cols-[1fr_400px] gap-6 md:gap-8 items-start">
         
-        {/* LEFT COLUMN: The Gmail UI Wrapper */}
-        <div className="rounded-xl border shadow-2xl bg-white overflow-hidden flex flex-col h-fit">
+        {/* LEFT COLUMN: The Gmail UI Wrapper (Now order-2 on mobile, order-1 on desktop) */}
+        <div className="rounded-xl border shadow-xl bg-white flex flex-col h-fit overflow-hidden w-full order-2 md:order-1">
           {/* Fake Browser/Email Header */}
           <div className="bg-gray-100 border-b px-4 py-3 flex items-center gap-2">
             <div className="flex gap-1.5">
@@ -276,25 +274,29 @@ export default function InvoicePreviewPage() {
           <div className="border-b p-4 text-sm space-y-2 bg-white">
             <div className="flex border-b pb-2">
               <span className="w-16 text-gray-500">To:</span>
-              <span className="font-medium">{invoice.customers.email}</span>
+              <span className="font-medium truncate">{invoice.customers.email}</span>
             </div>
             <div className="flex border-b pb-2">
               <span className="w-16 text-gray-500">Subject:</span>
-              <span className="font-medium">Invoice {invoice.invoice_number} from Binary Automates</span>
+              <span className="font-medium truncate">Invoice {invoice.invoice_number} from Binary Automates</span>
             </div>
             <div className="flex pt-1 text-gray-500">
               Please find your invoice attached below.
             </div>
           </div>
 
-          {/* The Actual Invoice Rendered inside the email body */}
-          <div className="p-8 bg-gray-50 overflow-auto">
-            {renderTemplate()}
+          {/* THE FIX: strict w-full with horizontal scroll. 
+            min-w-[700px] forces the invoice layout to stay intact, users just swipe to pan around it. 
+          */}
+          <div className="p-4 md:p-8 bg-gray-50 w-full overflow-x-auto">
+            <div className="min-w-[700px] pb-4">
+              {renderTemplate()}
+            </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Settings Panel */}
-        <div className="space-y-6">
+        {/* RIGHT COLUMN: Settings Panel (Now order-1 on mobile, order-2 on desktop) */}
+        <div className="space-y-6 w-full order-1 md:order-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -342,7 +344,6 @@ export default function InvoicePreviewPage() {
                 </Button>
 
                 <Button 
-                  // Catch both 'trendy' and any old 'wave' data from the database
                   variant={(activeTemplate === 'trendy' || activeTemplate === 'wave') ? 'default' : 'outline'} 
                   className="justify-start h-12"
                   onClick={() => handleTemplateChange('trendy')}
@@ -356,15 +357,14 @@ export default function InvoicePreviewPage() {
           </Card>
 
           <Button 
-            className="w-full h-10 text-base gap-1" 
+            className="w-full h-12 text-lg gap-2" 
             onClick={handleSendEmail}
             disabled={isPending}
           >
-            <Send className="h-4 w-4" /> 
+            <Send className="h-5 w-5" /> 
             {isPending ? "Sending Email..." : "Send Final Invoice"}
           </Button>
 
-          {/* NEW: THE AUDIT TRAIL UI */}
           <Card className="mt-8 bg-gray-50/50 border-dashed">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">

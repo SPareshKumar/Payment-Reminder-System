@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import DashboardCharts from "@/components/ui/DashboardCharts"
-import { IndianRupee, FileText, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react"
+import { IndianRupee, FileText, AlertCircle, CheckCircle2, ArrowRight, Plus } from "lucide-react"
 
 export default async function DashboardPage() {
   // Fetch all invoices with their associated customer names
@@ -39,13 +39,19 @@ export default async function DashboardPage() {
     .slice(0, 5)
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
 
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+        {/* We can also make the text slightly smaller on mobile so it doesn't wrap! */}
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+        
         <Link href="/invoices/new">
-          <Button>Create New Invoice</Button>
+          <Button className="gap-2 px-3 md:px-4">
+            <Plus className="h-5 w-5" />
+            {/* 'hidden' removes the text on mobile, 'md:inline' brings it back on tablets/desktop */}
+            <span className="hidden md:inline">Create New Invoice</span>
+          </Button>
         </Link>
       </div>
 
