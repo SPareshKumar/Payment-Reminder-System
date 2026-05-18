@@ -19,36 +19,41 @@ export default async function CustomersPage() {
       <div className="grid md:grid-cols-[350px_1fr] gap-8">
         
         {/* Left Side: Create Customer Form */}
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle className="text-lg">Add New Customer</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* The action attribute points directly to our Server Action */}
-            <form action={addCustomer} className="space-y-4">
-              <div className="space-y-2">
-                <Input name="displayName" placeholder="Display Name (e.g. John Doe) *" required />
-              </div>
-              <div className="space-y-2">
-                <Input name="email" type="email" placeholder="Email Address *" required />
-              </div>
-              <div className="space-y-2">
-                <Input name="companyName" placeholder="Company Name (Optional)" />
-              </div>
-              <div className="space-y-2">
-                {/* Using a native select here to save time on complex UI installations */}
-                <select 
-                  name="type" 
-                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                >
-                  <option value="business">Business</option>
-                  <option value="individual">Individual</option>
-                </select>
-              </div>
-              <Button type="submit" className="w-full mt-2">Save Customer</Button>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle className="text-lg">Add New Customer</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* The action attribute points directly to our Server Action */}
+              <form action={addCustomer} className="space-y-4">
+                <div className="space-y-2">
+                  <Input name="displayName" placeholder="Display Name (e.g. John Doe) *" required />
+                </div>
+                <div className="space-y-2">
+                  <Input name="email" type="email" placeholder="Email Address *" required />
+                </div>
+                <div className="space-y-2">
+                  <Input name="companyName" placeholder="Company Name (Optional)" />
+                </div>
+                <div className="space-y-2">
+                  {/* Using a native select here to save time on complex UI installations */}
+                  <select 
+                    name="type" 
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  >
+                    <option value="business">Business</option>
+                    <option value="individual">Individual</option>
+                  </select>
+                </div>
+                <Button type="submit" className="w-full mt-2">Save Customer</Button>
+              </form>
+            </CardContent>
+          </Card>
+          <div className="text-sm text-muted-foreground border border-dashed rounded-lg p-3">
+            <p><strong>Note:</strong> Resend allows sending mail to only the registered email id on free tier, although the workflow is tested and working.</p>
+          </div>
+        </div>
 
         {/* Right Side: Customer Data Table */}
         <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
